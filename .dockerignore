@@ -1,0 +1,16 @@
+node_modules
+build
+coverage
+.vscode
+.DS_STORE
+.env
+tmp
+
+.idea
+
+Dockerfile*
+docker-compose*
+.dockerignore
+*.md
+.git
+.gitignore
