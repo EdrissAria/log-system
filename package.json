@@ -58,10 +58,14 @@
     "@adonisjs/mail": "^9.2.0",
     "@adonisjs/session": "^7.1.1",
     "@adonisjs/static": "^1.1.1",
+    "@elastic/elasticsearch": "^8.15.0",
+    "@types/node-schedule": "^2.1.7",
     "@vinejs/vine": "^1.7.1",
+    "amqplib": "^0.10.4",
     "better-sqlite3": "^9.4.0",
     "luxon": "^3.4.4",
     "mysql": "^2.18.1",
+    "node-schedule": "^2.1.1",
     "reflect-metadata": "^0.2.1"
   },
   "eslintConfig": {

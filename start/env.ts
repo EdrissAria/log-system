@@ -49,6 +49,9 @@ export default await Env.create(new URL('../', import.meta.url), {
   SMTP_CLIENT_SECRET: Env.schema.string(),
   SMTP_USERNAME: Env.schema.string(),
   SMTP_REFRESH_TOKEN: Env.schema.string(),
-  SMTP_ACCESS_TOKEN: Env.schema.string()
+  SMTP_ACCESS_TOKEN: Env.schema.string(),
+  ELASTIC_ENDPOINT: Env.schema.string(),
+  ELASTIC_USERNAME: Env.schema.string(),
+  ELASTIC_PASSWORD: Env.schema.string()
 
 })
