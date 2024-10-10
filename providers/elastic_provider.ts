@@ -9,7 +9,7 @@ export default class ElasticProvider {
    * Register bindings to the container
    */
   register() {
-    this.app.container.bind(ElasticService, ()=>{
+    this.app.container.bind(ElasticService, () => {
       return new ElasticService()
     })
   }
@@ -18,40 +18,70 @@ export default class ElasticProvider {
    * The container bindings have booted
    */
   async boot() {
-    if (env.get('NODE_ENV') == 'development'){
-    try {
-      await new ElasticService().client.indices.create({
-        index: 'onniforums.com',
-        settings: {
-          index: {
-            max_result_window: 10000000,
-            mapping: {
-              nested_objects: {
-                limit: 50000,
+    if (env.get('NODE_ENV') == 'development') {
+      try {
+        await new ElasticService().client.indices.create({
+          index: 'logs',
+          settings: {
+            index: {
+              max_result_window: 10000000,
+              mapping: {
+                nested_objects: {
+                  limit: 50000,
+                },
               },
             },
           },
-        },
-        mappings: {
-          properties: {
-            id: { type: 'integer' },
-            mysql_id: { type: 'integer' },               
-            postId: { type: 'integer' },           
-            threadId: { type: 'integer' },          
-            author: { type: 'text' },           
-            title: { type: 'text' },                
-            content: { type: 'text' },              
-            date: { type: 'text' },
-            created_at: { type: 'date' },           
-            updated_at: { type: 'date' },           
+          mappings: {
+            properties: {
+              log_id: {
+                type: 'keyword',
+              },
+              project_id: {
+                type: 'keyword',
+              },
+              timestamp: {
+                type: 'date',
+                format: 'strict_date_optional_time||epoch_millis',
+              },
+              log_level: {
+                type: 'keyword',
+              },
+              message: {
+                type: 'text',
+              },
+              context: {
+                type: 'object',
+              },
+              log_type: {
+                type: 'keyword',
+              },
+              environment: {
+                type: 'keyword',
+              },
+              file_name: {
+                type: 'keyword',
+              },
+              line_number: {
+                type: 'integer',
+              },
+              service_name: {
+                type: 'keyword',
+              },
+              duration: {
+                type: 'integer',
+              },
+              status_code: {
+                type: 'integer',
+              },
+            },
           },
-        },
-      })
-      console.log('onniforums index created successfully')
-    } catch (error) {
-      console.log(error)
+        })
+        console.log('onniforums index created successfully')
+      } catch (error) {
+        console.log(error)
+      }
     }
-  }
   }
 
   /**
