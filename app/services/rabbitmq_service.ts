@@ -1,54 +1,66 @@
-import { connect, Channel, Connection } from 'amqplib';
+import { connect } from 'amqplib'
+import ElasticService from './elastic_service.js'
 
 class RabbitMqService {
-  private connection: Connection | null = null;
-  private channel: Channel | null = null;
-  private readonly queue = 'logs'; // Set the queue name for logging
-
-  // Method to connect to RabbitMQ
   public async connect() {
     try {
-      if (!this.connection) {
-        this.connection = await connect('amqp://localhost:5672');
-      }
+      const queue = 'logs'
+      const connection = await connect('amqp://localhost:5672')
+      const channel = await connection.createChannel()
+      await channel.assertQueue(queue, { durable: true })
 
-      if (!this.channel) {
-        this.channel = await this.connection.createChannel();
-        await this.channel.assertQueue(this.queue, { durable: true });
-      }
+      channel.consume(queue, async (msg) => {
+        if (msg !== null) {
+          const messageContent = msg.content.toString()
+          const { redelivered } = msg.fields
 
-      console.log('RabbitMQ connected and queue asserted');
-    } catch (error) {
-      console.error('Failed to connect to RabbitMQ:', error);
-    }
-  }
+          const logMessage = JSON.parse(messageContent);
 
-  // Method to publish messages (logs) to the queue
-  public async publishLog(message: string) {
-    if (this.channel) {
-      await this.channel.sendToQueue(this.queue, Buffer.from(message), {
-        persistent: true,
-      });
-      console.log(`Log sent: ${message}`);
-    } else {
-      console.error('RabbitMQ channel is not available');
-    }
-  }
-
-  // Method to consume messages from the queue
-  public async consumeLogs() {
-    if (this.channel) {
-      await this.channel.consume(this.queue, (msg) => {
-        if (msg) {
-          const content = msg.content.toString();
-          console.log(`Log received: ${content}`);
-          this.channel?.ack(msg); // Acknowledge the message
+          if (redelivered) {
+            console.log('This message is being redelivered:', messageContent)
+          } else {
+            console.log('Received new message:', messageContent)
+          }
+          
+          await this.saveLogToElastic(logMessage);
+          channel.ack(msg)
         }
+      })
+
+      console.log(`waiting for message...`)
+    } catch (ex) {
+      console.log(ex.message)
+    }
+  }
+
+  private async saveLogToElastic(logMessage: any) {
+    try {
+      const logEntry = {
+        context: logMessage.context || {},
+        duration: logMessage.duration || null,
+        environment: logMessage.environment || 'unknown',
+        file_name: logMessage.file_name || 'unknown',
+        line_number: logMessage.line_number || null,
+        log_id: logMessage.log_id || 'unknown',
+        log_level: logMessage.log_level || 'info',
+        log_type: logMessage.log_type || 'application',
+        message: logMessage.message || 'No message',
+        project_id: logMessage.project_id || 'unknown',
+        service_name: logMessage.service_name || 'unknown',
+        status_code: logMessage.status_code || null,
+        timestamp: logMessage.timestamp || new Date().toISOString(),
+      };
+
+      const response = await new ElasticService().client.index({
+        index: 'logs',
+        body: logEntry,
       });
-    } else {
-      console.error('RabbitMQ channel is not available for consuming logs');
+
+      console.log('Log saved to Elasticsearch:', response);
+    } catch (err) {
+      console.error('Failed to save log to Elasticsearch:', err);
     }
   }
 }
 
-export default new RabbitMqService(); // Exporting as singleton service
+export default new RabbitMqService()
